@@ -122,7 +122,7 @@ def c_cl_gradient(v_w=v_w, x=x, c_ag=c_ag, k=k, ksp=ksp):
 
 
 
-def calc_ksp(k=None):
+def calc_ksp(k=None, tapes: Tuple[tf.GradientTape]=None):
     print("\n==calc==")
     V0 = 50 + 0.055 # ml
 
@@ -137,10 +137,104 @@ def calc_ksp(k=None):
     print(f"k:{k}\n")
     T = [40, 60, 80]
 
+    if tapes is not None:
+        for val in (V0, c_cl, c_ag, x, k):
+            for tape in tapes:
+                if val is not tf.Tensor:
+                    val = tf.convert_to_tensor(val)
+                tape.watch(val)
+
     ksp = (V0 * c_cl * c_ag * x * k) / ((V0 + x * k) ** 2)
 
     print(f"温度:\n{T}")
     print(f"ksp:\n{ksp}")
+
+    return tapes
+
+
+def calc_ksp_grad():
+    with tf.GradientTape() as tape1, tf.GradientTape() as tape2, tf.GradientTape() as tape3, tf.GradientTape() as tape4, tf.GradientTape() as tape5:
+        tapes = (tape1, tape2, tape3, tape4, tape5)
+        print("\n==calc==")
+        V0 = np.array(50 + 0.055)
+        V0 = np.full((3,), V0)
+        V0 = tf.convert_to_tensor(V0, dtype=tf.float64)
+
+        c_cl = np.array(1.0987 * (10 ** (-4)))
+        c_cl = np.full((3,), c_cl)
+        c_cl = tf.convert_to_tensor(c_cl, dtype=tf.float64)
+
+        # c_ag = 3.00 * (10 ** (-3))
+        k1 = np.array(0.05)
+        k1 = np.full((3,), k1)
+        k1 = tf.convert_to_tensor(k1, dtype=tf.float64)
+
+        k2 = np.array(0.08)
+        k2 = np.full((3,), k2)
+        k2 = tf.convert_to_tensor(k2, dtype=tf.float64)
+
+        Vag = np.array(5)
+        Vag = np.full((3,), Vag)
+        Vag = tf.convert_to_tensor(Vag, dtype=tf.float64)
+
+        x = np.array([12, 19, 29]) # teki
+        x = tf.convert_to_tensor(x, dtype=tf.float64)
+
+        for val in (x, V0, c_cl, k1, k2, Vag):
+            print(val)
+            for tape in tapes:
+                tape.watch(val)
+
+        ksp = (V0 * c_cl * (0.3 * k1) * x * k2) / (Vag * (V0 + x * k2) ** 2)
+
+    T = [40, 60, 80]
+    print(f"温度:\n{T}")
+    print(f"ksp:\n{ksp}")
+
+    dksp_dx = tape1.gradient(ksp, x)
+    dksp_dV0 = tape2.gradient(ksp, V0)
+    dksp_dk1 = tape3.gradient(ksp, k1)
+    dksp_dk2 = tape4.gradient(ksp, k2)
+    dksp_dVag = tape5.gradient(ksp, Vag)
+
+    print(f"\ndksp_dx:\n{dksp_dx}")
+    print(f"dksp_dV0:\n{dksp_dV0}")
+    print(f"dksp_dk1:\n{dksp_dk1}")
+    print(f"dksp_dk2:\n{dksp_dk2}")
+    print(f"dksp_dVag:\n{dksp_dVag}")
+
+    delta_x = 1
+    delta_V0 = 0.005
+    delta_k1 = 0.01
+    delta_k2 = 0.01
+    delta_Vag = 0.005
+
+    delta_by_x = dksp_dx * delta_x
+    delta_by_V0 = dksp_dV0 * delta_V0
+    delta_by_k1 = dksp_dk1 * delta_k1
+    delta_by_k2 = dksp_dk2 * delta_k2
+    delta_by_Vag = dksp_dVag * delta_Vag
+
+    print(f"\nxの誤差\n{delta_by_x}")
+    print(f"{tf.reduce_mean(delta_by_x)}")
+    print(f"V0の誤差\n{delta_by_V0}")
+    print(f"{tf.reduce_mean(delta_by_V0)}")
+    print(f"k1の誤差\n{delta_by_k1}")
+    print(f"{tf.reduce_mean(delta_by_k1)}")
+    print(f"k2の誤差\n{delta_by_k2}")
+    print(f"{tf.reduce_mean(delta_by_k2)}")
+    print(f"Vagの誤差\n{delta_by_Vag}")
+    print(f"{tf.reduce_mean(delta_by_Vag)}")
+
+    delta = delta_by_x + delta_by_V0 + delta_by_k1 + delta_by_k2 + delta_by_Vag
+
+    print(f"\n誤差総和\n{delta}")
+
+    print(f"\ndelta    :{delta}")
+    print(f"ksp      :{ksp}")
+    print(f"ksp+delta:{ksp + delta}")
+    print(f"ksp-delta:{ksp - delta}")
+
 
 
 def compare():
@@ -148,8 +242,21 @@ def compare():
     f(k=0.08)
     f(k=0.064)
 
+def gradient():
+    f = calc_ksp
+    with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
+        tapes = (tape1, tape2)
+        tapes = f(tapes=tapes)
+        tape1, tape2 = tapes
+    
+    dksp_dV0 = tape1.gradient(ksp)
+    print(dksp_dV0)
+    
+
 if __name__ == "__main__":
-    #compare()
-    calc_ksp()
+    # compare()
+    #calc_ksp()
+    # gradient()
+    calc_ksp_grad()
     #one_exp()
     #c_cl_gradient()
