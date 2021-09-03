@@ -204,7 +204,7 @@ def calc_ksp_grad():
     print(f"dksp_dVag:\n{dksp_dVag}")
 
     delta_x = 1
-    delta_V0 = 0.005
+    delta_V0 = 0.05
     delta_k1 = 0.01
     delta_k2 = 0.01
     delta_Vag = 0.005
