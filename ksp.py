@@ -51,18 +51,23 @@ def c_cl_gradient(v_w=v_w, x=x, c_ag=c_ag, k=k, ksp=ksp):
         #c_ag = tf.convert_to_tensor(c_ag) # 
         k1 = np.full((3,), 0.05)
         k1 = tf.convert_to_tensor(k1, dtype=tf.float64) # 滴瓶一滴あたりのml
-        v_ag = tf.constant(10.0, dtype=tf.float64) # メスシリンダー
+        v_ag = tf.convert_to_tensor(np.full((3,), 10.0), dtype=tf.float64) # メスシリンダー
 
         for val in (v_w, x, k, ksp, k1, v_ag):
             for tape in tapes:
                 tape.watch(val)
 
+        c0 = tf.constant(0.1, dtype=tf.float64)
         c_ag = tf.constant(0.1, dtype=tf.float64) * k1 /(v_ag + k1)
 
         print(f"{c_ag}")
 
+        print(f"vag:{v_ag}, k1:{k1}, k2:{k}, ksp:{ksp}, x:{x}, v_w{v_w}")
 
-        c_cl = ksp * (v_w + x * k) ** 2 / (c_ag * k * v_w * x)
+        c_cl = (v_ag + k1) * ((v_w + x * k) ** 2) * ksp / (0.1 * k1 * k * v_w * x)
+        #print(c_cl)
+
+        #c_cl = ksp * (v_ag + k1) * ((v_w + x * k) ** 2) / (c_ag * k * v_w * x)
 
 
     print(f"\nC_Cl:\n{c_cl}")
@@ -80,11 +85,11 @@ def c_cl_gradient(v_w=v_w, x=x, c_ag=c_ag, k=k, ksp=ksp):
     print(f"dc_dk1:\n{dc_dk1}")
     print(f"dc_dvag:\n{dc_dvag}")
 
-    delta_x = 0.5 * x
-    delta_vw= 0.01
+    delta_x = 1
+    delta_vw= 0.005
     delta_k = 0.01
     delta_k1 = 0.01
-    delta_vag = 0.01
+    delta_vag = 0.005
 
     delta_by_x = dc_dx * delta_x
     delta_by_vw = dc_dvw * delta_vw
@@ -98,19 +103,22 @@ def c_cl_gradient(v_w=v_w, x=x, c_ag=c_ag, k=k, ksp=ksp):
     delta_by_k1 = tf.abs(delta_by_k1)
     delta_by_vag = tf.abs(delta_by_vag)
 
-    print(f"\nx(滴数)の誤差\n{delta_by_x}")
-    print(f"\nvw(滴下先の水)の誤差\n{delta_by_vw}")
-    print(f"\nk(3ml駒込)の誤差\n{delta_by_k}")
-    print(f"\nk1(滴瓶)の誤差\n{delta_by_k1}")
-    print(f"\nvag(agno3の希釈時の水)の誤差\n{delta_by_vag}")
+    print(f"\nx(滴数)の誤差\n{delta_by_x}\n{tf.reduce_mean(delta_by_x)}")
+    print(f"\nvw(滴下先の水)の誤差\n{delta_by_vw}\n{tf.reduce_mean(delta_by_vw)}")
+    print(f"\nk(3ml駒込)の誤差\n{delta_by_k}\n{tf.reduce_mean(delta_by_k)}")
+    print(f"\nk1(滴瓶)の誤差\n{delta_by_k1}\n{tf.reduce_mean(delta_by_k1)}")
+    print(f"\nvag(agno3の希釈時の水)の誤差\n{delta_by_vag}\n{tf.reduce_mean(delta_by_vag)}")
 
     delta = delta_by_x + delta_by_vw + delta_by_k + delta_by_k1 + delta_by_vag
 
     print(f"\n誤差合計:\n{delta}")
 
-    print(f"\n滴数の誤差平均\n{tf.reduce_mean(delta)}")
+    print(f"\n総和の誤差平均\n{tf.reduce_mean(delta)}")
     print(f"{c_cl + tf.reduce_mean(delta)}")
-    print(f"{c_cl + delta}")
+    print(f"delta     :{delta}")
+    print(f"c_cl      :{c_cl}")
+    print(f"c_cl+delta:{c_cl + delta}")
+    print(f"c_cl-delta:{c_cl - delta}")
 
 
 
@@ -142,6 +150,6 @@ def compare():
 
 if __name__ == "__main__":
     #compare()
-    #calc_ksp()
+    calc_ksp()
     #one_exp()
-    c_cl_gradient()
+    #c_cl_gradient()
