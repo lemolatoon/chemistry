@@ -12,7 +12,7 @@ def h2so4(ph: np.ndarray, graph: bool = False):
     k1 = np.array(10 ** (-2.35))
     k2 = np.array(10 ** (-1.99))
 
-    beta1 = 10 ** (2.35)
+    beta1 = 10 ** (9.78)
     beta2 = 10 ** (12.13)
 
     f = 0.994
@@ -113,12 +113,12 @@ def test():
     # h2so4(4)
 
 def get_value():
-    ph = np.array([0, 1, 2, 2.23, 2.5, 3, 4, 6, 8, 10, 10.5, 11, 11.5, 12])
+    ph = np.array([0, 1, 2, 2.23, 2.5, 3, 4, 6, 8, 9, 10, 10.5, 11, 11.25, 11.5, 11.75])
     print(len(ph))
     h2so4(ph, graph=True)
 
 
 if __name__ == "__main__":
-    test()
-    # get_value()
-    # h2so4(0.5)
+    # test()
+    get_value()
+    # h2so4(4)
