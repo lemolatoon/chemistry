@@ -135,7 +135,7 @@ def calc_ksp(k=None, tapes: Tuple[tf.GradientTape]=None):
         k = 0.08 # ml / teki
         #やはり3ml駒込
     print(f"k:{k}\n")
-    T = [40, 60, 80]
+    T = np.array([38.6, 64.5, 79.3])
 
     if tapes is not None:
         for val in (V0, c_cl, c_ag, x, k):
@@ -149,7 +149,7 @@ def calc_ksp(k=None, tapes: Tuple[tf.GradientTape]=None):
     print(f"温度:\n{T}")
     print(f"ksp:\n{ksp}")
 
-    return tapes
+    return ksp
 
 
 def calc_ksp_grad():
@@ -203,6 +203,9 @@ def calc_ksp_grad():
     print(f"dksp_dk2:\n{dksp_dk2}")
     print(f"dksp_dVag:\n{dksp_dVag}")
 
+    val = 0.3 * c_cl * k1 * k2 * V0 * (V0 - k2 * x) / (Vag * (V0 + k2 * x) ** 3)
+    print(f"val:{val}")
+
     delta_x = 1
     delta_V0 = 0.05
     delta_k1 = 0.01
@@ -214,6 +217,12 @@ def calc_ksp_grad():
     delta_by_k1 = dksp_dk1 * delta_k1
     delta_by_k2 = dksp_dk2 * delta_k2
     delta_by_Vag = dksp_dVag * delta_Vag
+
+    delta_by_x = tf.abs(delta_by_x)
+    delta_by_V0 = tf.abs(delta_by_V0)
+    delta_by_k1 = tf.abs(delta_by_k1)
+    delta_by_k2 = tf.abs(delta_by_k2)
+    delta_by_Vag = tf.abs(delta_by_Vag)
 
     print(f"\nxの誤差\n{delta_by_x}")
     print(f"{tf.reduce_mean(delta_by_x)}")
@@ -229,6 +238,7 @@ def calc_ksp_grad():
     delta = delta_by_x + delta_by_V0 + delta_by_k1 + delta_by_k2 + delta_by_Vag
 
     print(f"\n誤差総和\n{delta}")
+    print(f"\n誤差総和平均\n{tf.reduce_mean(delta)}")
 
     print(f"\ndelta    :{delta}")
     print(f"ksp      :{ksp}")
@@ -251,12 +261,34 @@ def gradient():
     
     dksp_dV0 = tape1.gradient(ksp)
     print(dksp_dV0)
+
+def fitting():
+    T = np.array([38.6, 64.5, 79.3])
+    ksp = calc_ksp()
+    y = np.log(ksp)
+    x = 1 / (273 + T)
+
+    print(x)
+    print(y)
+    print()
+    print((x - 2.7 * (10 ** (-3))) * 3 * (10 ** 3) * 10)
+    print()
+    print()
+    a, b = np.polyfit(x, y, 1)
+
+    print(f"a:{a}")
+    print(f"b:{b}")
+
+    import matplotlib.pyplot as plt
+
+    #x =  np.arange(start=int(np.min(x)) - 1, stop=)
     
 
 if __name__ == "__main__":
     # compare()
     #calc_ksp()
+    fitting()
     # gradient()
-    calc_ksp_grad()
+    #calc_ksp_grad()
     #one_exp()
     #c_cl_gradient()
