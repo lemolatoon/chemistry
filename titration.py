@@ -7,11 +7,11 @@ va = 50
 
 kw = 10 ** (-14)
 
-def h2so4(ph: np.ndarray):
+def h2so4(ph: np.ndarray, graph: bool = False):
     k2 = np.array(10 ** (-1.99))
 
     f = 1.000
-    ca = np.array(0.0004) * f
+    ca = np.array(0.004) * f
 
     h = 10 ** (-ph)
     oh = kw / h
@@ -26,7 +26,6 @@ def h2so4(ph: np.ndarray):
     print(f"\n平均プロトン数:\n{n}")
 
     vb = calc_vb(va, ca, dha, dh2a, h, oh, cb)
-    vb = calc_vb2(ca, va, n, cb, h, oh)
 
     print(f"\n滴下量:\n{vb}")
 
@@ -38,17 +37,19 @@ def h2so4(ph: np.ndarray):
 
     a = calc_a(n, h, oh, ca)
 
-    plt.plot(ph, vb)
-    plt.ylim(0, 20)
-    plt.show()
+    if graph:
 
-    plt.plot(ph, da)
-    plt.plot(ph, dha)
-    plt.plot(ph, dh2a)
-    plt.show()
+        plt.plot(ph, vb)
+        plt.ylim(0, 20)
+        plt.show()
+
+        plt.plot(ph, da)
+        plt.plot(ph, dha)
+        plt.plot(ph, dh2a)
+        plt.show()
 
 
-def h2so4_2(ph: np.ndarray):
+def h2so4_2(ph: np.ndarray, graph: bool = False):
     k2 = np.array(10 ** (-1.99))
 
     f = 1.000
@@ -68,13 +69,11 @@ def h2so4_2(ph: np.ndarray):
     print(f"\n平均プロトン数:\n{n}")
 
     vb1 = calc_vb(va, ca, dha, dh2a, h, oh, cb)
-    vb = calc_vb2(ca, va, n, cb, h, oh)
-
-    print("==================")
-    print(vb1 - vb)
+    vb1 = calc_vb2(ca, va, n, cb, h, oh)
 
 
-    print(f"\n滴下量:\n{vb}")
+
+    # print(f"\n滴下量:\n{vb}")
 
     alpha = calc_alpha(h, k2)
 
@@ -86,14 +85,19 @@ def h2so4_2(ph: np.ndarray):
     # a = 2 - n - (h - oh) / ca
     vb = a * (ca * va / cb)
 
-    plt.plot(ph, vb)
-    plt.plot(ph, vb1)
-    plt.ylim(0, 20)
-    plt.show()
-    
-    plt.plot(ph, a)
-    plt.ylim(0, 3)
-    plt.show()
+    print("vb diff==================")
+    print(vb1 - vb)
+
+    if graph:
+
+        plt.plot(ph, vb)
+        plt.plot(ph, vb1)
+        plt.ylim(0, 20)
+        plt.show()
+        
+        plt.plot(ph, a)
+        plt.ylim(0, 3)
+        plt.show()
     
     
 
@@ -134,7 +138,7 @@ def plot(x, y):
 
 def test():
     ph = np.linspace(0, 14)
-    h2so4_2(ph)
+    h2so4(ph)
     # h2so4(4)
 
 
